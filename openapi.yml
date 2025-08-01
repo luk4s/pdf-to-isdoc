@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: ISDOC PDF Extractor API
+  description: |
+    A simple Node.js API application that extracts ISDOC (Invoice Standard Document) data from PDF files.
+    
+    ## Features
+    - Extract ISDOC data from PDF files
+    - Simple token-based authentication
+    - Comprehensive error handling
+    - File validation and size limits
+    
+    ## Authentication
+    All API endpoints require authentication using a Bearer token in the Authorization header:
+    ```
+    Authorization: Bearer your-secret-token
+    ```
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API service is running
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T12:00:00.000Z"
+              example:
+                status: "OK"
+                timestamp: "2024-01-01T12:00:00.000Z"
+
+  /api/extract-isdoc:
+    post:
+      summary: Extract ISDOC data from PDF
+      description: |
+        Upload a PDF file to extract ISDOC (Invoice Standard Document) data.
+        
+        The API will:
+        - Validate the PDF file format and size
+        - Extract ISDOC data if present
+        - Return JSON data or 422 error if no ISDOC data found
+        
+        **File Requirements:**
+        - File type: PDF only
+        - Maximum size: 10MB
+        - Must contain valid ISDOC data
+      tags:
+        - ISDOC
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+                  description: PDF file containing ISDOC data
+              required:
+                - pdf
+            encoding:
+              pdf:
+                contentType: application/pdf
+      responses:
+        '200':
+          description: ISDOC data extracted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    description: Extracted ISDOC invoice data
+                    properties:
+                      # ISDOC invoice properties would be defined here
+                      # This is a placeholder for the actual ISDOC schema
+                      invoiceId:
+                        type: string
+                        example: "INV-2024-001"
+                      supplier:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: "Supplier Name"
+                          taxId:
+                            type: string
+                            example: "CZ12345678"
+                      customer:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: "Customer Name"
+                          taxId:
+                            type: string
+                            example: "CZ87654321"
+                      totalAmount:
+                        type: number
+                        format: decimal
+                        example: 1000.00
+                      currency:
+                        type: string
+                        example: "CZK"
+                      issueDate:
+                        type: string
+                        format: date
+                        example: "2024-01-01"
+                  extractedAt:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T12:00:00.000Z"
+              example:
+                success: true
+                data:
+                  invoiceId: "INV-2024-001"
+                  supplier:
+                    name: "Supplier Name"
+                    taxId: "CZ12345678"
+                  customer:
+                    name: "Customer Name"
+                    taxId: "CZ87654321"
+                  totalAmount: 1000.00
+                  currency: "CZK"
+                  issueDate: "2024-01-01"
+                extractedAt: "2024-01-01T12:00:00.000Z"
+        '400':
+          description: Bad request - invalid file or missing file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFile:
+                  summary: Missing PDF file
+                  value:
+                    error: "PDF file is required"
+                invalidFileType:
+                  summary: Invalid file type
+                  value:
+                    error: "Only PDF files are allowed"
+                fileTooLarge:
+                  summary: File too large
+                  value:
+                    error: "File too large. Maximum size is 10MB."
+        '401':
+          description: Unauthorized - missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Access token required"
+        '403':
+          description: Forbidden - invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid token"
+        '422':
+          description: Unprocessable Entity - PDF does not contain ISDOC data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "No ISDOC data found in PDF"
+                message: "The uploaded PDF does not contain valid ISDOC data"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "An error occurred while processing the PDF"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer token authentication.
+        Include your API token in the Authorization header:
+        ```
+        Authorization: Bearer your-secret-token
+        ```
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        message:
+          type: string
+          description: Additional error details (optional)
+      required:
+        - error
+
+  examples:
+    HealthCheck:
+      summary: Health check response
+      value:
+        status: "OK"
+        timestamp: "2024-01-01T12:00:00.000Z"
+    
+    ISDOCExtraction:
+      summary: Successful ISDOC extraction
+      value:
+        success: true
+        data:
+          invoiceId: "INV-2024-001"
+          supplier:
+            name: "Supplier Name"
+            taxId: "CZ12345678"
+          customer:
+            name: "Customer Name"
+            taxId: "CZ87654321"
+          totalAmount: 1000.00
+          currency: "CZK"
+          issueDate: "2024-01-01"
+        extractedAt: "2024-01-01T12:00:00.000Z"
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: ISDOC
+    description: ISDOC PDF processing endpoints 
