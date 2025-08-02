@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Rate limiting middleware to protect API from abuse
-  - General rate limit: 60 requests per minute (1 req/sec average) for all endpoints
+  - General rate limit: 20 requests per minute (1 req/3 sec average) for all endpoints
   - Strict rate limit: 10 requests per minute for PDF processing endpoint
   - Rate limit headers in responses (`RateLimit-*`)
   - Health check endpoint exempted from rate limiting
