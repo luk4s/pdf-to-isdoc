@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const helmet = require('helmet');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const { hasISDOC, extractISDOC } = require('isdoc-pdf');
@@ -16,10 +17,27 @@ if (!AUTH_TOKEN) {
   throw new Error('AUTH_TOKEN is not set')
 }
 
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 20, // limit each IP to 60 requests per windowMs (1 request per second average)
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '1 minute'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Skip rate limiting for health checks and during testing
+  skip: (req) => req.path === '/health' || process.env.NODE_ENV === 'test'
+});
+
 // Security middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Apply general rate limiting to all requests
+app.use(limiter);
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -41,7 +59,7 @@ const authenticateToken = (req, res, next) => {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: (process.env.MAX_FILE_SIZE || 5) * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
@@ -168,4 +186,4 @@ app.listen(PORT, () => {
   console.log(`API endpoint: http://localhost:${PORT}/api/extract-isdoc`);
 });
 
-module.exports = { app, processPDFFile }; 
+module.exports = { app, processPDFFile };

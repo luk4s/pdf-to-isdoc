@@ -187,6 +187,7 @@ node test-api.js path/to/your.pdf
 | `PORT` | `3000` | Server port |
 | `AUTH_TOKEN` | `your-secret-token` | Authentication token |
 | `NODE_ENV` | `production` | Environment mode |
+| `MAX_FILE_SIZE` | `5` | Maximum file size in MB |
 
 ### Docker Configuration
 
